@@ -824,3 +824,209 @@ button:active, .add-product-btn:active {
   padding-top: 20px;
   border-top: 1px solid #222;
 }
+/* Базові стилі для мобілок (пишемо поза медіа-запитами) */
+.hero-content {
+  padding: 80px 20px; /* Зменшуємо відступи на телефоні */
+  text-align: center;
+}
+
+.hero-subtitle {
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+
+h1 {
+  font-size: 32px; /* Менший шрифт для мобілки */
+  line-height: 1.1;
+}
+
+.hero-btns {
+  display: flex;
+  flex-direction: column; /* Кнопки одна під одною */
+  gap: 15px;
+  width: 100%;
+}
+
+.cta-button, .cta-secondary {
+  width: 100%; /* Кнопки на всю ширину екрану */
+  justify-content: center;
+}
+
+/* Стилі для комп'ютерів (ширше за 768px) */
+@media (min-width: 768px) {
+  .hero-content {
+    padding: 120px 80px;
+    text-align: left;
+  }
+
+  h1 {
+    font-size: 64px;
+  }
+
+  .hero-btns {
+    flex-direction: row; /* Кнопки в ряд на ПК */
+    width: auto;
+  }
+
+  .cta-button, .cta-secondary {
+    width: auto;
+  }
+}
+/* --- АДАПТИВНІСТЬ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ (екран менше 768px) --- */
+@media (max-width: 768px) {
+  /* 1. Виправляємо Hero-секцію (головний банер) */
+  .hero-content {
+    padding: 60px 20px; /* Зменшуємо відступи навколо тексту */
+    text-align: center; /* Центруємо текст на мобілці */
+  }
+
+  h1 {
+    font-size: 36px !important; /* Робимо заголовок меншим, щоб вліз в екран */
+    line-height: 1.1;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  /* 2. Кнопки робимо одна під одною */
+  .hero-btns {
+    flex-direction: column; 
+    gap: 15px;
+    width: 100%;
+    align-items: center;
+  }
+
+  .cta-button, .cta-secondary {
+    width: 100%; /* Кнопки на всю ширину екрану телефону */
+    max-width: 300px;
+    justify-content: center;
+  }
+
+  /* 3. Шапка (Header) */
+  header {
+    padding: 15px 20px !important;
+  }
+
+  nav {
+    display: none; /* Ховаємо текстове меню, щоб не захаращувати екран */
+  }
+
+  .logo {
+    font-size: 20px;
+  }
+
+  /* 4. Сітка товарів (Catalog) */
+  /* Оскільки у тебе в App.jsx вказано class="catalog-section", додамо стилі для карток */
+  .catalog-grid { 
+    grid-template-columns: 1fr !important; /* Товари йдуть по одному в ряд */
+    padding: 0 20px;
+  }
+}
+@media (max-width: 480px) {
+  .user-name {
+    display: none; /* Ховаємо ім'я на маленьких екранах, залишаємо тільки аву */
+  }
+}
+/* --- ФІКС МОБІЛЬНОЇ ШАПКИ --- */
+@media (max-width: 480px) {
+  /* Щоб кошик не вилітав, а аватарку не стискало */
+  .header {
+    padding: 10px 15px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+
+  /* ФІКС АВАТАРКИ: задаємо чіткий розмір */
+  .user-avatar {
+    width: 35px !important;
+    height: 35px !important;
+    min-width: 35px !important; /* Не дає її стискати */
+    border-radius: 50%;
+    object-fit: cover; /* Щоб фото не розплющувало */
+  }
+
+  /* Ховаємо напис "test" на мобілці, щоб звільнити місце для кошика */
+  .user-name {
+    display: none !important;
+  }
+
+  /* Кошик робимо трохи компактнішим */
+  .cart-btn {
+    padding: 5px 10px !important;
+    flex-shrink: 0 !important; /* Забороняє кошику зникати */
+  }
+}
+/* --- ЦЕЙ БЛОК ВРЯТУЄ МОБІЛЬНУ ВЕРСІЮ --- */
+
+/* Медіа-запит: спрацює тільки на екранах менше 480 пікселів */
+@media (max-width: 480px) {
+  
+  /* 1. Рятуємо аватарку від "жування" */
+  .user-avatar {
+    width: 35px !important;
+    height: 35px !important;
+    min-width: 35px !important; /* Це не дасть її стиснути */
+    border-radius: 50% !important;
+    object-fit: cover !important; /* Щоб фото було рівним, а не розтягнутим */
+  }
+
+  /* 2. Ховаємо текст ім'я, щоб звільнити місце для кошика */
+  .user-name {
+    display: none !important;
+  }
+
+  /* 3. Кошик: робимо так, щоб він не зникав */
+  .cart-btn {
+    flex-shrink: 0 !important; /* Забороняє браузеру "викидати" кошик за екран */
+    padding: 6px 10px !important;
+  }
+
+  /* 4. Загальна шапка: робимо її компактнішою */
+  .header {
+    padding: 10px !important;
+    gap: 10px !important;
+  }
+}
+/* Рятуємо аватарку: ставимо їй жорсткий розмір */
+.user-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important; /* Це забороняє її стискати */
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid #ff4d4d;
+}
+
+/* Налаштування для телефонів */
+@media (max-width: 480px) {
+  /* Ховаємо ім'я (test), щоб вивільнити місце для кошика */
+  .user-name {
+    display: none !important;
+  }
+
+  /* Зменшуємо відступи в шапці, щоб все влізло */
+  .header {
+    padding: 10px 15px !important;
+    gap: 8px !important;
+  }
+
+  /* Робимо кнопки авторизації компактнішими */
+  .auth-btn-sm, .auth-btn {
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+  }
+}
+.user-avatar {
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
+@media (max-width: 480px) {
+  .user-name { display: none !important; }
+}

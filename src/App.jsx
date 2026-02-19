@@ -497,6 +497,22 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       </header>
 
+      
+<header className="flex justify-between items-center p-4 md:px-20 relative">
+  <div className="logo text-xl md:text-2xl font-bold">VIGOR <span className="text-orange-600">🔥</span></div>
+  
+  {/* Приховуємо навігацію на мобілці, щоб не заважала */}
+  <nav className="hidden md:flex gap-8">
+    <a href="#home">Головна</a>
+    <a href="#catalog">Каталог</a>
+    <a href="#about">Про нас</a>
+  </nav>
+
+  <div className="flex items-center gap-2">
+     {/* Кнопка Адмін та Кошик */}
+  </div>
+</header>
+
       {/* HERO */}
       <section className="hero">
         <div className="hero-content">
@@ -514,21 +530,18 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       <main id="catalog" className="catalog-section">
         <h2 className="section-title">Каталог товарів</h2>
         {/* ПОЛЕ ПОШУКУ */}
-<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-  <input
+
+<div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', padding: '0 20px' }}>
+  <input 
     type="text"
     placeholder="Пошук товару за назвою..."
     value={searchQuery}
     onChange={(e) => setSearchQuery(e.target.value)}
     style={{
       width: '100%',
-      maxWidth: '400px',
-      padding: '10px 20px',
-      borderRadius: '20px',
-      border: '1px solid #333',
-      background: '#111',
-      color: '#fff',
-      outline: 'none'
+      maxWidth: '600px', // На ПК буде 600px, на мобільних розтягнеться завдяки width: 100%
+      padding: '12px 20px',
+      fontSize: '16px' // Важливо: 16px запобігає автоматичному зуму на iPhone
     }}
   />
 </div>
