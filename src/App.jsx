@@ -468,17 +468,13 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
           {user ? (
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               {isAdmin && <span style={{ backgroundColor: '#ff9900', color: '#000', fontSize: '11px', fontWeight: 'bold', padding: '3px 6px', borderRadius: '4px' }}>АДМІН</span>}
-              <div 
-                onClick={handleOpenProfile}
-                style={{ width: '38px', height: '38px', borderRadius: '50%', backgroundColor: '#222', cursor: 'pointer', overflow: 'hidden', border: '2px solid #ff4d4d', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: '0.2s' }}
-                title="Мій кабінет"
-              >
+              <div onClick={handleOpenProfile} style={{ width: '38px', height: '38px', minWidth: '38px', flexShrink: 0, borderRadius: '50%', backgroundColor: '#222', cursor: 'pointer', overflow: 'hidden', border: '2px solid #ff4d4d', display: 'flex', justifyContent: 'center', alignItems: 'center', transition: '0.2s' }} title="Мій кабінет">
                 {editAvatar ? <img src={editAvatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="avatar" /> : <span style={{ fontSize: '18px' }}>👤</span>}
               </div>
-              <span style={{ color: '#fff', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }} onClick={handleOpenProfile}>
+              <span className="hide-on-mobile" style={{ color: '#fff', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }} onClick={handleOpenProfile}>
                 {editName || user.email.split('@')[0]}
               </span>
-              <button onClick={handleLogout} className="cta-secondary" style={{ padding: '6px 12px', fontSize: '12px' }}>Вийти</button>
+              <button onClick={handleLogout} className="cta-secondary hide-on-mobile" style={{ padding: '6px 12px', fontSize: '12px' }}>Вийти</button>
             </div>
           ) : (
             <button onClick={() => setIsAuthModalOpen(true)} className="cta-button" style={{ padding: '8px 20px', fontSize: '14px' }}>УВІЙТИ</button>

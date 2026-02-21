@@ -1030,3 +1030,19 @@ h1 {
 @media (max-width: 480px) {
   .user-name { display: none !important; }
 }
+@media (max-width: 768px) {
+  /* Ховаємо елементи з міткою, яку ми щойно додали */
+  .hide-on-mobile {
+    display: none !important;
+  }
+  
+  /* Ховаємо посилання (Головна, Каталог, Про нас), бо вони займають пів екрану */
+  .header .nav {
+    display: none;
+  }
+  
+  /* Ховаємо слово "КОШИК", залишаємо тільки саму іконку корзини */
+  .cart-text {
+    display: none;
+  }
+}
