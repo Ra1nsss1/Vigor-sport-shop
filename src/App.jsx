@@ -553,8 +553,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       </header>
 
       
-<header className="flex justify-between items-center p-4 md:px-20 relative">
-  <div className="logo text-xl md:text-2xl font-bold">VIGOR <span className="text-orange-600">🔥</span></div>
+
   
   {/* Приховуємо навігацію на мобілці, щоб не заважала */}
   <nav className="hidden md:flex gap-8">
