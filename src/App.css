@@ -1046,3 +1046,38 @@ h1 {
     display: none;
   }
 }
+/* Стилізація випадаючого списку */
+.input-group select {
+  width: 100%;
+  padding: 12px 15px; /* Відступи (можете підігнати під ваші інпути) */
+  background-color: #1a1a1a; /* Темний фон (підберіть точний колір з інпутів) */
+  color: #ffffff; /* Білий текст */
+  border: 1px solid #333; /* Темна рамка */
+  border-radius: 4px; /* Заокруглення кутів */
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  
+  /* Прибираємо стандартну системну стрілку */
+  appearance: none; 
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* Додаємо власну кастомну стрілку (білого кольору), щоб пасувала до теми */
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 16px;
+}
+
+/* Підсвітка рамки при кліку (фокусі), щоб відповідало помаранчевій кнопці */
+.input-group select:focus {
+  border-color: #ff4500; /* Замініть на ваш точний помаранчевий колір */
+}
+
+/* Темний фон для самих варіантів у списку */
+.input-group select option {
+  background-color: #1a1a1a;
+  color: #ffffff;
+}

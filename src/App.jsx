@@ -3,6 +3,7 @@ import { db, auth } from './firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import './App.css';
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 function App() {
   // 1. СТАНИ ДЛЯ ФОРМИ ЗАМОВЛЕННЯ
   // СТАНИ: РЕДАГУВАННЯ ТОВАРУ
@@ -23,9 +24,11 @@ function App() {
   const [activeCategory, setActiveCategory] = useState('Всі');
   const [toastMessage, setToastMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeMainCategory, setActiveMainCategory] = useState('Всі');
   // 3. СТАНИ ДЛЯ ТОВАРІВ (З FIREBASE)
   const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  
 
   // 4. СТАНИ ДЛЯ АВТОРИЗАЦІЇ ТА ПРОФІЛЮ
   const [user, setUser] = useState(null); 
@@ -35,6 +38,31 @@ function App() {
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
+  const handleAvatarUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Отримуємо доступ до сховища
+  const storageInstance = getStorage();
+  // Створюємо шлях, куди покладемо файл (наприклад: avatars/user@email.com_avatar.jpg)
+  const fileRef = ref(storageInstance, `avatars/${user.email}_avatar`);
+
+  try {
+    // 1. Відправляємо файл у Firebase Storage
+    await uploadBytes(fileRef, file);
+    
+    // 2. Отримуємо готове URL-посилання на це фото
+    const downloadURL = await getDownloadURL(fileRef);
+    
+    // 3. Зберігаємо це посилання в стан (щоб потім відправити в базу при натисканні "Зберегти")
+    setEditAvatar(downloadURL);
+    alert("Фото успішно завантажено! Не забудьте натиснути 'Зберегти дані'.");
+
+  } catch (error) {
+    console.error("Помилка завантаження фото:", error);
+    alert("Не вдалося завантажити фото. Перевірте дозволи у Firebase Storage.");
+  }
+};
 
   // Дані для редагування профілю
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -47,6 +75,7 @@ function App() {
   const [newProductName, setNewProductName] = useState('');
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductCategory, setNewProductCategory] = useState('Взуття');
+  const [newProductMainCategory, setNewProductMainCategory] = useState('Спортивний одяг');
   const [newProductImage, setNewProductImage] = useState('');
 
   // 6. СТАНИ: ДЕТАЛІ ТОВАРУ ТА ВІДГУКИ
@@ -79,13 +108,29 @@ const [selectedAdminUserOrders, setSelectedAdminUserOrders] = useState([]);
 
   const categories = ['Всі', 'Взуття', 'Одяг', 'Інвентар', 'Тренажери', 'Аксесуари'];
 
-  const filteredProducts = products.filter(product => {
-  // Перевірка категорії
-  const matchesCategory = activeCategory === 'Всі' || product.category === activeCategory;
-  // Перевірка пошуку
-  const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredProducts = products.filter((product) => {
+  // 1. "Розумний" розподіл для старих товарів, у яких ще немає mainCategory
+  let actualMainCategory = product.mainCategory;
   
-  return matchesCategory && matchesSearch;
+  if (!actualMainCategory) {
+    // Якщо це старий товар, визначаємо його головний розділ за підкатегорією
+    if (['Взуття', 'Одяг', 'Аксесуари'].includes(product.category)) {
+      actualMainCategory = 'Спортивний одяг';
+    } else if (['Кардіо', 'Силові', 'Інвентар', 'Тренажери'].includes(product.category)) {
+      actualMainCategory = 'Тренажери';
+    } else if (['Протеїн', 'Креатин', 'Вітаміни'].includes(product.category)) {
+      actualMainCategory = 'Добавки';
+    } else {
+      actualMainCategory = 'Спортивний одяг'; // На випадок, якщо категорія невідома
+    }
+  }
+
+  // 2. Стандартна фільтрація
+  const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const matchesMainCategory = activeMainCategory === 'Всі' || actualMainCategory === activeMainCategory;
+  const matchesSubCategory = activeCategory === 'Всі' || product.category === activeCategory;
+
+  return matchesSearch && matchesMainCategory && matchesSubCategory;
 });
 
   // Оновлений підрахунок суми з урахуванням кількості
@@ -302,29 +347,43 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
 
   // --- АДМІНКА: ДОДАВАННЯ/ВИДАЛЕННЯ ТОВАРУ ---
   const handleAddProduct = async (e) => {
-    e.preventDefault();
-    if (!isAdmin) return;
+  e.preventDefault();
+  if (!isAdmin) return;
     try {
-      const docRef = await addDoc(collection(db, "products"), {
-        name: newProductName, price: Number(newProductPrice), 
-        category: newProductCategory, image: newProductImage, createdAt: serverTimestamp()
-      });
-      setProducts([...products, { id: docRef.id, name: newProductName, price: Number(newProductPrice), category: newProductCategory, image: newProductImage }]);
-      alert("✅ Товар успішно додано!");
-      setIsAddProductModalOpen(false); setNewProductName(''); setNewProductPrice(''); setNewProductImage(''); setNewProductCategory('Взуття');
-    } catch (error) { alert("Помилка! Не вдалося додати товар."); }
-  };
+    // 1. Додаємо в базу Firebase
+    const docRef = await addDoc(collection(db, "products"), {
+      name: newProductName,
+      price: Number(newProductPrice),
+      mainCategory: newProductMainCategory, // Головна категорія
+      category: newProductCategory,         // Підкатегорія
+      image: newProductImage,
+      createdAt: serverTimestamp()
+    });
 
-  const handleDeleteProduct = async (productId, e) => {
-    e.stopPropagation(); 
-    if (!isAdmin) return; 
-    if (!window.confirm("🚨 Видалити цей товар?")) return;
-    try {
-      await deleteDoc(doc(db, "products", productId));
-      setProducts(products.filter(product => product.id !== productId));
-      alert("🗑️ Товар видалено!");
-    } catch (error) { alert("Помилка! Не вдалося видалити товар."); }
-  };
+    // 2. Оновлюємо стан на екрані, щоб товар з'явився одразу
+    setProducts([
+      ...products, 
+      { 
+        id: docRef.id, 
+        name: newProductName, 
+        price: Number(newProductPrice), 
+        mainCategory: newProductMainCategory, 
+        category: newProductCategory, 
+        image: newProductImage 
+      }
+    ]);
+
+    alert("✅ Товар успішно додано!");
+    setIsAddProductModalOpen(false); 
+    setNewProductName(''); 
+    setNewProductPrice(''); 
+    setNewProductImage('');
+    
+  } catch (error) {
+    console.error(error);
+    alert("❌ Помилка! Не вдалося додати товар.");
+  }
+};
 
   // --- АДМІНКА: ЗАМОВЛЕННЯ ТА КОРИСТУВАЧІ ---
   const handleOpenOrders = async () => {
@@ -527,6 +586,30 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         <h2 className="section-title">Каталог товарів</h2>
         {/* ПОЛЕ ПОШУКУ */}
 
+{/* 1. СУПЕР-КАТЕГОРІЇ */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        {['Всі', 'Спортивний одяг', 'Тренажери', 'Добавки'].map((cat) => (
+          <button 
+            key={cat}
+            onClick={() => {
+              setActiveMainCategory(cat);
+              setActiveCategory('Всі'); // Скидаємо підкатегорію при зміні головної!
+            }}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '25px',
+              border: '1px solid #ff4d4d',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              color: 'white',
+              backgroundColor: activeMainCategory === cat ? '#ff4d4d' : '#222'
+            }}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', padding: '0 20px' }}>
   <input 
     type="text"
@@ -535,19 +618,41 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
     onChange={(e) => setSearchQuery(e.target.value)}
     style={{
       width: '100%',
-      maxWidth: '600px', // На ПК буде 600px, на мобільних розтягнеться завдяки width: 100%
+      maxWidth: '600px',
       padding: '12px 20px',
-      fontSize: '16px' // Важливо: 16px запобігає автоматичному зуму на iPhone
+      fontSize: '16px',
+      backgroundColor: '#1a1a1a', /* Темний фон */
+      color: '#ffffff',           /* Білий текст */
+      border: '1px solid #444',   /* Темна рамка */
+      borderRadius: '25px',       /* Гарні закруглені кути */
+      outline: 'none'             /* Прибираємо біле обведення при кліку */
     }}
   />
 </div>
-        <div className="category-filters">
-          {categories.map(cat => (
-            <button key={cat} className={`filter-btn ${activeCategory === cat ? 'active' : ''}`} onClick={() => setActiveCategory(cat)}>
-              {cat}
-            </button>
+        {/* 3. РОЗУМНІ ПІДКАТЕГОРІЇ (ховаються, коли вибрано "Всі") */}
+      {activeMainCategory === 'Спортивний одяг' && (
+        <div className="category-filters" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {['Всі', 'Одяг', 'Взуття', 'Аксесуари'].map(cat => (
+            <button key={cat} onClick={() => setActiveCategory(cat)} className={activeCategory === cat ? 'active' : ''} style={{ padding: '8px 16px', background: activeCategory === cat ? '#ff4d4d' : 'transparent', border: '1px solid #444', color: '#fff', borderRadius: '5px' }}>{cat}</button>
           ))}
         </div>
+      )}
+
+      {activeMainCategory === 'Тренажери' && (
+        <div className="category-filters" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {['Всі', 'Кардіо', 'Силові', 'Інвентар'].map(cat => (
+            <button key={cat} onClick={() => setActiveCategory(cat)} className={activeCategory === cat ? 'active' : ''} style={{ padding: '8px 16px', background: activeCategory === cat ? '#ff4d4d' : 'transparent', border: '1px solid #444', color: '#fff', borderRadius: '5px' }}>{cat}</button>
+          ))}
+        </div>
+      )}
+
+      {activeMainCategory === 'Добавки' && (
+        <div className="category-filters" style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {['Всі', 'Протеїн', 'Креатин', 'Вітаміни'].map(cat => (
+            <button key={cat} onClick={() => setActiveCategory(cat)} className={activeCategory === cat ? 'active' : ''} style={{ padding: '8px 16px', background: activeCategory === cat ? '#ff4d4d' : 'transparent', border: '1px solid #444', color: '#fff', borderRadius: '5px' }}>{cat}</button>
+          ))}
+        </div>
+      )}
 
         {isLoadingProducts ? (
           <div style={{ textAlign: 'center', padding: '50px', color: '#ff4d4d', fontSize: '20px' }}>Завантажуємо товари з хмари... ⏳</div>
@@ -641,13 +746,52 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                 <input type="number" value={newProductPrice} onChange={(e) => setNewProductPrice(e.target.value)} required placeholder="2500" />
               </div>
               <div className="input-group">
-                <label>Категорія</label>
-                <select value={newProductCategory} onChange={(e) => setNewProductCategory(e.target.value)} style={{ padding: '10px', backgroundColor: '#222', color: '#fff', border: '1px solid #333', borderRadius: '5px' }}>
-                  {categories.filter(c => c !== 'Всі').map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
+          <label>Головний розділ</label>
+          <select 
+            value={newProductMainCategory} 
+            onChange={(e) => {
+              const selectedMain = e.target.value;
+              setNewProductMainCategory(selectedMain);
+              if(selectedMain === 'Спортивний одяг') setNewProductCategory('Одяг');
+              if(selectedMain === 'Тренажери') setNewProductCategory('Кардіо');
+              if(selectedMain === 'Добавки') setNewProductCategory('Протеїн');
+            }}
+          >
+            <option value="Спортивний одяг">Спортивний одяг</option>
+            <option value="Тренажери">Тренажери</option>
+            <option value="Добавки">Добавки</option>
+          </select>
+        </div>
+
+        <div className="input-group">
+          <label>Підкатегорія</label>
+          <select 
+            value={newProductCategory} 
+            onChange={(e) => setNewProductCategory(e.target.value)}
+          >
+            {newProductMainCategory === 'Спортивний одяг' && (
+              <>
+                <option value="Одяг">Одяг</option>
+                <option value="Взуття">Взуття</option>
+                <option value="Аксесуари">Аксесуари</option>
+              </>
+            )}
+            {newProductMainCategory === 'Тренажери' && (
+              <>
+                <option value="Кардіо">Кардіо</option>
+                <option value="Силові">Силові</option>
+                <option value="Інвентар">Інвентар</option>
+              </>
+            )}
+            {newProductMainCategory === 'Добавки' && (
+              <>
+                <option value="Протеїн">Протеїн</option>
+                <option value="Креатин">Креатин</option>
+                <option value="Вітаміни">Вітаміни</option>
+              </>
+            )}
+          </select>
+        </div>
               <div className="input-group">
                 <label>URL зображення (посилання)</label>
                 <input type="url" value={newProductImage} onChange={(e) => setNewProductImage(e.target.value)} required placeholder="https://..." />
