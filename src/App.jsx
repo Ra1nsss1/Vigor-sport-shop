@@ -896,6 +896,29 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                   </div>
                   <button type="submit" className="confirm-order-btn" style={{ marginBottom: '10px' }}>ЗБЕРЕГТИ ДАНІ</button>
                 </form>
+                <button 
+                  onClick={() => {
+                    handleLogout();
+                    setIsProfileModalOpen(false); // Одразу закриваємо вікно профілю
+                  }} 
+                  className="cta-secondary" 
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px', 
+                    marginTop: '10px', 
+                    borderRadius: '8px',
+                    border: '1px solid #555',
+                    backgroundColor: 'transparent',
+                    color: '#ccc',
+                    cursor: 'pointer',
+                    transition: '0.2s'
+                  }}
+                  onMouseOver={(e) => { e.target.style.borderColor = '#ff4d4d'; e.target.style.color = '#ff4d4d'; }}
+                  onMouseOut={(e) => { e.target.style.borderColor = '#555'; e.target.style.color = '#ccc'; }}
+                >
+                  Вийти з акаунта
+                </button>
+                {/* --- КІНЕЦЬ НОВОЇ КНОПКИ --- */}
               </div>
 
               <div style={{ flex: '2 1 400px', display: 'flex', flexDirection: 'column' }}>
