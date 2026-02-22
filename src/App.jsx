@@ -359,6 +359,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       image: newProductImage,
       createdAt: serverTimestamp()
     });
+    
 
     // 2. Оновлюємо стан на екрані, щоб товар з'явився одразу
     setProducts([
@@ -384,6 +385,9 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
     alert("❌ Помилка! Не вдалося додати товар.");
   }
 };
+
+  
+
 
   // --- АДМІНКА: ЗАМОВЛЕННЯ ТА КОРИСТУВАЧІ ---
   const handleOpenOrders = async () => {
@@ -553,7 +557,8 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       </header>
 
       
-
+<header className="flex justify-between items-center p-4 md:px-20 relative">
+  <div className="logo text-xl md:text-2xl font-bold">VIGOR <span className="text-orange-600">🔥</span></div>
   
   {/* Приховуємо навігацію на мобілці, щоб не заважала */}
   <nav className="hidden md:flex gap-8">
@@ -801,6 +806,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
+
       {/* МОДАЛКА: ПЕРЕГЛЯД ЗАМОВЛЕНЬ (АДМІН) */}
       {isOrdersModalOpen && (
         <div className="modal-overlay" onClick={() => setIsOrdersModalOpen(false)} style={{ zIndex: 10000 }}>
@@ -955,26 +961,65 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                 />
               </div>
               
+              <div>
+                <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Ціна (грн)</label>
+                <input 
+                  type="number" 
+                  value={editProductForm.price} 
+                  onChange={(e) => setEditProductForm({...editProductForm, price: e.target.value})} 
+                  required 
+                  style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #333', background: '#222', color: '#fff', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {/* ОСЬ ТУТ ТЕПЕР НОВІ ВИПАДАЮЧІ СПИСКИ КАТЕГОРІЙ */}
               <div style={{ display: 'flex', gap: '15px' }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Ціна (грн)</label>
-                  <input 
-                    type="number" 
-                    value={editProductForm.price} 
-                    onChange={(e) => setEditProductForm({...editProductForm, price: e.target.value})} 
+                  <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Головний розділ</label>
+                  <select 
+                    value={editProductForm.mainCategory || ''} 
+                    onChange={(e) => setEditProductForm({...editProductForm, mainCategory: e.target.value, category: ''})} 
                     required 
                     style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #333', background: '#222', color: '#fff', boxSizing: 'border-box' }}
-                  />
+                  >
+                    <option value="" disabled>Оберіть розділ...</option>
+                    <option value="Спортивний одяг">Спортивний одяг</option>
+                    <option value="Тренажери">Тренажери</option>
+                    <option value="Добавки">Добавки</option>
+                  </select>
                 </div>
+
                 <div style={{ flex: 1 }}>
-                  <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Категорія</label>
-                  <input 
-                    type="text" 
-                    value={editProductForm.category} 
+                  <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Підкатегорія</label>
+                  <select 
+                    value={editProductForm.category || ''} 
                     onChange={(e) => setEditProductForm({...editProductForm, category: e.target.value})} 
                     required 
                     style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #333', background: '#222', color: '#fff', boxSizing: 'border-box' }}
-                  />
+                  >
+                    <option value="" disabled>Оберіть підкатегорію...</option>
+                    {editProductForm.mainCategory === 'Спортивний одяг' && (
+                      <>
+                        <option value="Одяг">Одяг</option>
+                        <option value="Взуття">Взуття</option>
+                        <option value="Аксесуари">Аксесуари</option>
+                      </>
+                    )}
+                    {editProductForm.mainCategory === 'Тренажери' && (
+                      <>
+                        <option value="Кардіо">Кардіо</option>
+                        <option value="Силові">Силові</option>
+                        <option value="Інвентар">Інвентар</option>
+                      </>
+                    )}
+                    {editProductForm.mainCategory === 'Добавки' && (
+                      <>
+                        <option value="Протеїн">Протеїн</option>
+                        <option value="Креатин">Креатин</option>
+                        <option value="Вітаміни">Вітаміни</option>
+                      </>
+                    )}
+                  </select>
                 </div>
               </div>
 
@@ -991,7 +1036,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
               <div>
                 <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Опис</label>
                 <textarea 
-                  value={editProductForm.description} 
+                  value={editProductForm.description || ''} 
                   onChange={(e) => setEditProductForm({...editProductForm, description: e.target.value})} 
                   rows="4"
                   style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #333', background: '#222', color: '#fff', resize: 'vertical', boxSizing: 'border-box' }}

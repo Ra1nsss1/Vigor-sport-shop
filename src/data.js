@@ -27,5 +27,49 @@ export const products = [
   // АКСЕСУАРИ (3 товари)
   { id: 18, name: "Шейкер 700мл", category: "Аксесуари", price: 320, image: "https://bodylife.ua/image/cache/catalog/import_yml/116/838/887/2/4066772484_shejker-optimum-nutrition-600x600.jpg" },
   { id: 19, name: "Фітнес-трекер Sport V8", category: "Аксесуари", price: 1400, image: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?q=80&w=600" },
-  { id: 20, name: "Сумка для залу GymBag", category: "Аксесуари", price: 1850, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=600" }
+  { id: 20, name: "Сумка для залу GymBag", category: "Аксесуари", price: 1850, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=600" },
+// --- НОВА ПАРТІЯ ТОВАРІВ ---
+  
+  { id: 21, name: "Кросівки New Balance 574", mainCategory: "Спортивний одяг", category: "Взуття", price: 4500, image: "https://images.unsplash.com/photo-1539185441755-769473a23570?w=500" },
+  { id: 22, name: "Штангетки Adidas Powerlift", mainCategory: "Спортивний одяг", category: "Взуття", price: 5800, image: "https://images.unsplash.com/photo-1514989940723-e8e51635b782?w=500" },
+  
+  // СПОРТИВНИЙ ОДЯГ -> ОДЯГ
+  { id: 23, name: "Компресійна футболка Under Armour", mainCategory: "Спортивний одяг", category: "Одяг", price: 1200, image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?w=500" },
+  { id: 24, name: "Спортивний топ Nike Pro", mainCategory: "Спортивний одяг", category: "Одяг", price: 1100, image: "https://images.unsplash.com/photo-1608228079968-c7681eaef81a?w=500" },
+  { id: 25, name: "Шорти для бігу Asics", mainCategory: "Спортивний одяг", category: "Одяг", price: 950, image: "https://images.unsplash.com/photo-1591557304165-8ee6eb154d89?w=500" },
+  
+  // СПОРТИВНИЙ ОДЯГ -> АКСЕСУАРИ
+  { id: 26, name: "Спортивна сумка Puma Challenger", mainCategory: "Спортивний одяг", category: "Аксесуари", price: 1400, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500" },
+  { id: 27, name: "Кепка Nike Sportswear", mainCategory: "Спортивний одяг", category: "Аксесуари", price: 750, image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=500" },
+  { id: 28, name: "Пляшка для води BlenderBottle 0.8л", mainCategory: "Спортивний одяг", category: "Аксесуари", price: 450, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500" },
+  
+  // ТРЕНАЖЕРИ -> КАРДІО
+  { id: 29, name: "Бігова доріжка FitLogic", mainCategory: "Тренажери", category: "Кардіо", price: 18500, image: "https://images.unsplash.com/photo-1576678927484-cc907957088c?w=500" },
+  { id: 30, name: "Орбітрек Vigor Pro", mainCategory: "Тренажери", category: "Кардіо", price: 14200, image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500" },
+  { id: 31, name: "Велотренажер Gymtek", mainCategory: "Тренажери", category: "Кардіо", price: 8900, image: "https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?w=500" },
+  
+  // ТРЕНАЖЕРИ -> СИЛОВІ
+  { id: 32, name: "Гантелі набірні (2х15 кг)", mainCategory: "Тренажери", category: "Силові", price: 2100, image: "https://images.unsplash.com/photo-1586401100295-7a8096fd231a?w=500" },
+  { id: 33, name: "Штанга олімпійська 100 кг", mainCategory: "Тренажери", category: "Силові", price: 7500, image: "https://images.unsplash.com/photo-1534438097544-e53591f42dcb?w=500" },
+  { id: 34, name: "Гиря чавунна 24 кг", mainCategory: "Тренажери", category: "Силові", price: 1800, image: "https://images.unsplash.com/photo-1601288496920-b6154fe3626a?w=500" },
+  
+  // ТРЕНАЖЕРИ -> ІНВЕНТАР
+  { id: 35, name: "Набір фітнес-резинок (5 шт)", mainCategory: "Тренажери", category: "Інвентар", price: 350, image: "https://images.unsplash.com/photo-1598266663412-7f79026bf1ea?w=500" },
+  { id: 36, name: "Колесо для преса", mainCategory: "Тренажери", category: "Інвентар", price: 400, image: "https://images.unsplash.com/photo-1599058917212-d750089bc07e?w=500" },
+  { id: 37, name: "Еспандер трубчастий з ручками", mainCategory: "Тренажери", category: "Інвентар", price: 550, image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=500" },
+  { id: 38, name: "Масажний валик (Foam Roller)", mainCategory: "Тренажери", category: "Інвентар", price: 600, image: "https://images.unsplash.com/photo-1600881333168-2ef49b341f30?w=500" },
+
+  // ДОБАВКИ -> ПРОТЕЇН
+  { id: 39, name: "100% Whey Gold Standard 2.27 кг", mainCategory: "Добавки", category: "Протеїн", price: 2800, image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=500" },
+  { id: 40, name: "Impact Whey Protein MyProtein 1 кг", mainCategory: "Добавки", category: "Протеїн", price: 1100, image: "https://images.unsplash.com/photo-1579722820308-d74e571900a9?w=500" },
+  { id: 41, name: "Ізолят Dymatize ISO100 1.4 кг", mainCategory: "Добавки", category: "Протеїн", price: 3200, image: "https://images.unsplash.com/photo-1550572017-edb91b9787ff?w=500" },
+
+  // ДОБАВКИ -> КРЕАТИН
+  { id: 42, name: "Creatine Monohydrate BioTech 500г", mainCategory: "Добавки", category: "Креатин", price: 650, image: "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=500" },
+  { id: 43, name: "Creatine Powder Optimum Nutrition", mainCategory: "Добавки", category: "Креатин", price: 850, image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=500" },
+
+  // ДОБАВКИ -> ВІТАМІНИ
+  { id: 44, name: "Opti-Men 150 таблеток", mainCategory: "Добавки", category: "Вітаміни", price: 1450, image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=500" },
+  { id: 45, name: "Animal Pak Universal Nutrition", mainCategory: "Добавки", category: "Вітаміни", price: 1800, image: "https://images.unsplash.com/photo-1577401239170-897942555fb3?w=500" },
+  { id: 46, name: "Omega-3 NOW Foods 200 капсул", mainCategory: "Добавки", category: "Вітаміни", price: 750, image: "https://images.unsplash.com/photo-1616671285401-277d1ca42ab4?w=500" }
 ];
