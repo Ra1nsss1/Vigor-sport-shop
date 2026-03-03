@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db, auth } from './firebase'; 
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import './App.css';
+import { getAuth, sendEmailVerification } from "firebase/auth";
 import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, where, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 function App() {
@@ -42,19 +43,11 @@ function App() {
   const file = e.target.files[0];
   if (!file) return;
 
-  // Отримуємо доступ до сховища
   const storageInstance = getStorage();
-  // Створюємо шлях, куди покладемо файл (наприклад: avatars/user@email.com_avatar.jpg)
   const fileRef = ref(storageInstance, `avatars/${user.email}_avatar`);
-
   try {
-    // 1. Відправляємо файл у Firebase Storage
     await uploadBytes(fileRef, file);
-    
-    // 2. Отримуємо готове URL-посилання на це фото
     const downloadURL = await getDownloadURL(fileRef);
-    
-    // 3. Зберігаємо це посилання в стан (щоб потім відправити в базу при натисканні "Зберегти")
     setEditAvatar(downloadURL);
     alert("Фото успішно завантажено! Не забудьте натиснути 'Зберегти дані'.");
 
@@ -64,7 +57,7 @@ function App() {
   }
 };
 
-  // Дані для редагування профілю
+
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
@@ -109,11 +102,10 @@ const [selectedAdminUserOrders, setSelectedAdminUserOrders] = useState([]);
   const categories = ['Всі', 'Взуття', 'Одяг', 'Інвентар', 'Тренажери', 'Аксесуари'];
 
   const filteredProducts = products.filter((product) => {
-  // 1. "Розумний" розподіл для старих товарів, у яких ще немає mainCategory
   let actualMainCategory = product.mainCategory;
   
   if (!actualMainCategory) {
-    // Якщо це старий товар, визначаємо його головний розділ за підкатегорією
+
     if (['Взуття', 'Одяг', 'Аксесуари'].includes(product.category)) {
       actualMainCategory = 'Спортивний одяг';
     } else if (['Кардіо', 'Силові', 'Інвентар', 'Тренажери'].includes(product.category)) {
@@ -121,11 +113,11 @@ const [selectedAdminUserOrders, setSelectedAdminUserOrders] = useState([]);
     } else if (['Протеїн', 'Креатин', 'Вітаміни'].includes(product.category)) {
       actualMainCategory = 'Добавки';
     } else {
-      actualMainCategory = 'Спортивний одяг'; // На випадок, якщо категорія невідома
+      actualMainCategory = 'Спортивний одяг'; 
     }
   }
 
-  // 2. Стандартна фільтрація
+
   const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
   const matchesMainCategory = activeMainCategory === 'Всі' || actualMainCategory === activeMainCategory;
   const matchesSubCategory = activeCategory === 'Всі' || product.category === activeCategory;
@@ -133,9 +125,8 @@ const [selectedAdminUserOrders, setSelectedAdminUserOrders] = useState([]);
   return matchesSearch && matchesMainCategory && matchesSubCategory;
 });
 
-  // Оновлений підрахунок суми з урахуванням кількості
 const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-  // --- ЕФЕКТИ ---
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
@@ -155,6 +146,62 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         setUserProfile(null);
       }
     });
+
+
+    const handleEmailSubmit = () => {
+  // Стандартний регулярний вираз для валідації пошти
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email.trim()) {
+    showToast("❌ Поле пошти не може бути порожнім");
+    return;
+  }
+
+  if (!emailRegex.test(email)) {
+    showToast("❌ Введіть коректний email (наприклад: name@gmail.com)");
+    return;
+  }
+
+  // Якщо все ок — йдемо далі (відправка на сервер/Firebase)
+  showToast("✅ Пошта валідна!");
+  // registerUser(email); 
+};
+// === 1. ТВОЯ ФУНКЦІЯ РЕЄСТРАЦІЇ (кидай туди, де всі функції) ===
+const handleRegister = async (e) => {
+  e.preventDefault(); // Зупиняємо перезавантаження сторінки
+  
+  const auth = getAuth();
+  
+  try {
+    // 1. Створюємо користувача в Firebase
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 2. Відправляємо лист для підтвердження
+    await sendEmailVerification(user);
+
+    // 3. Кидаємо красиве повідомлення
+    setToastMessage("✅ Реєстрація успішна! Перевір пошту для підтвердження 🦾");
+    setTimeout(() => setToastMessage(''), 4000);
+
+    // Опціонально: можеш тут закрити модалку реєстрації
+    // setIsRegisterModalOpen(false); 
+    
+  } catch (error) {
+    console.error("Помилка реєстрації:", error.message);
+    
+    // Робимо помилки зрозумілими для юзера
+    if (error.code === 'auth/email-already-in-use') {
+      setToastMessage("❌ Ця пошта вже зареєстрована!");
+    } else if (error.code === 'auth/weak-password') {
+      setToastMessage("❌ Пароль має бути мінімум 6 символів!");
+    } else {
+      setToastMessage("❌ Сталася помилка: " + error.message);
+    }
+    setTimeout(() => setToastMessage(''), 4000);
+  }
+};
+
 
     const fetchProducts = async () => {
       try {
@@ -176,34 +223,50 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
   }, []);
 
   // --- ФУНКЦІЇ АВТОРИЗАЦІЇ ---
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setAuthError('');
-    try {
-      let userCredential;
-      if (isLoginMode) {
-        userCredential = await signInWithEmailAndPassword(auth, authEmail, authPassword);
-        alert("Ви успішно увійшли!");
-      } else {
-        userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
-        alert("Реєстрація успішна!");
-      }
+const handleAuth = async (e) => {
+  e.preventDefault();
+  setAuthError('');
+  try {
+    let userCredential;
+    if (isLoginMode) {
+      // 1. ЛОГІКА ВХОДУ
+      userCredential = await signInWithEmailAndPassword(auth, authEmail, authPassword);
+      alert("Ви успішно увійшли!");
+    } else {
+      // 2. ЛОГІКА РЕЄСТРАЦІЇ
+      userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+      
+      // 🔥 ОСЬ ТУТ ВІДПРАВЛЯЄТЬСЯ ЛИСТ ПІСЛЯ СТВОРЕННЯ АКАУНТА 🔥
+      await sendEmailVerification(userCredential.user);
+      
+      alert("✅ Реєстрація успішна! На вашу пошту відправлено лист для підтвердження. Будь ласка, перейдіть по лінку в листі.");
+    }
 
-      const loggedInUser = userCredential.user;
-      await setDoc(doc(db, "users", loggedInUser.uid), {
-        email: loggedInUser.email,
-        role: loggedInUser.email === ADMIN_EMAIL ? 'admin' : 'user',
-        lastActivity: serverTimestamp()
-      }, { merge: true });
+    const loggedInUser = userCredential.user;
+    
+    // Записуємо юзера в базу Firestore
+    await setDoc(doc(db, "users", loggedInUser.uid), {
+      email: loggedInUser.email,
+      role: loggedInUser.email === ADMIN_EMAIL ? 'admin' : 'user',
+      lastActivity: serverTimestamp()
+    }, { merge: true });
 
-      setIsAuthModalOpen(false); 
-      setAuthEmail('');
-      setAuthPassword('');
-    } catch (error) {
-      console.error("Помилка авторизації:", error);
+    setIsAuthModalOpen(false); 
+    setAuthEmail('');
+    setAuthPassword('');
+  } catch (error) {
+    console.error("Помилка авторизації:", error);
+    
+    // Нормальний вивід помилок, щоб ти бачив, що йде не так
+    if (error.code === 'auth/email-already-in-use') {
+      setAuthError("Ця пошта вже зареєстрована!");
+    } else if (error.code === 'auth/weak-password') {
+      setAuthError("Пароль має бути мінімум 6 символів!");
+    } else {
       setAuthError("Помилка! Перевірте дані.");
     }
-  };
+  }
+};
 
   const handleLogout = async () => {
     try {
@@ -212,6 +275,20 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       alert("Ви вийшли з акаунта");
     } catch (error) {
       console.error("Помилка виходу:", error);
+    }
+  };
+  const handleResendVerification = async () => {
+    if (!user) return;
+    try {
+      await sendEmailVerification(user);
+      alert("✅ Лист успішно відправлено! Перевірте пошту (і папку Спам).");
+    } catch (error) {
+      console.error("Помилка відправки:", error);
+      if (error.code === 'auth/too-many-requests') {
+        alert("⏳ Зачекайте трохи, ви вже відправляли лист нещодавно.");
+      } else {
+        alert("❌ Сталася помилка при відправці листа.");
+      }
     }
   };
 
@@ -268,7 +345,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
     }
   };
 
-// 1. Відкрити модалку з даними обраного товару
   const handleEditProductClick = (product) => {
     setEditingProductId(product.id);
     setEditProductForm({
@@ -281,7 +357,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
     setIsEditProductModalOpen(true);
   };
 
-  // 2. Зберегти зміни в Firebase
   const handleSaveProductEdit = async (e) => {
     e.preventDefault();
     if (!editingProductId) return;
@@ -296,7 +371,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         image: editProductForm.image
       });
 
-      // Оновлюємо товари на екрані без перезавантаження
       setProducts(prev => prev.map(p => 
         p.id === editingProductId ? { ...p, ...editProductForm, price: Number(editProductForm.price) } : p
       ));
@@ -323,10 +397,10 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       return [...prevItems, { ...product, quantity: 1 }];
     });
     
-    // --- ВИКЛИКАЄМО НОВУ ПЛАШКУ ЗАМІСТЬ ALERT ---
+
     setToastMessage(`🛒 "${product.name}" додано в кошик!`);
     setTimeout(() => {
-      setToastMessage(''); // Ховаємо через 3 секунди
+      setToastMessage(''); 
     }, 3000);
   };
 
@@ -334,7 +408,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
     setCartItems(prevItems => prevItems.map(item => {
       if (item.id === itemId) {
         const newQuantity = (item.quantity || 1) + delta;
-        // Кількість не може бути меншою за 1
+    
         return { ...item, quantity: newQuantity > 0 ? newQuantity : 1 };
       }
       return item;
@@ -350,18 +424,17 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
   e.preventDefault();
   if (!isAdmin) return;
     try {
-    // 1. Додаємо в базу Firebase
     const docRef = await addDoc(collection(db, "products"), {
       name: newProductName,
       price: Number(newProductPrice),
-      mainCategory: newProductMainCategory, // Головна категорія
-      category: newProductCategory,         // Підкатегорія
+      mainCategory: newProductMainCategory, 
+      category: newProductCategory,         
       image: newProductImage,
       createdAt: serverTimestamp()
     });
     
 
-    // 2. Оновлюємо стан на екрані, щоб товар з'явився одразу
+  
     setProducts([
       ...products, 
       { 
@@ -412,7 +485,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       await updateDoc(doc(db, "orders", orderId), { status: newStatus });
-      // Оновлюємо статус у списку адміна миттєво
       setOrdersList(ordersList.map(order => 
         order.id === orderId ? { ...order, status: newStatus } : order
       ));
@@ -433,10 +505,10 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
   const handleAdminUserClick = async (userObj) => {
     setLoadingUserDetails(true);
     setIsLoadingAdminUserOrders(true);
-    setSelectedAdminUserOrders([]); // Очищуємо попередні замовлення
+    setSelectedAdminUserOrders([]); 
     
     try {
-      // 1. Завантажуємо свіжі дані користувача (аватарку, ім'я)
+
       const userDocRef = doc(db, 'users', userObj.id);
       const userDocSnap = await getDoc(userDocRef);
       let userData = userObj;
@@ -445,12 +517,10 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       }
       setSelectedAdminUser(userData);
 
-      // 2. Шукаємо всі замовлення, де email співпадає з email цього користувача
       const q = query(collection(db, "orders"), where("customerEmail", "==", userData.email));
       const ordersSnap = await getDocs(q);
       const ordersData = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      
-      // Сортуємо від найновіших до найстаріших
+    
       ordersData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
       setSelectedAdminUserOrders(ordersData);
 
@@ -555,10 +625,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
           </button>
         </div>
       </header>
-
-      
-
-
       {/* HERO */}
       <section className="hero">
         <div className="hero-content">
@@ -575,8 +641,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       {/* КАТАЛОГ */}
       <main id="catalog" className="catalog-section">
         <h2 className="section-title">Каталог товарів</h2>
-        {/* ПОЛЕ ПОШУКУ */}
-
 {/* 1. СУПЕР-КАТЕГОРІЇ */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
         {['Всі', 'Спортивний одяг', 'Тренажери', 'Добавки'].map((cat) => (
@@ -584,7 +648,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
             key={cat}
             onClick={() => {
               setActiveMainCategory(cat);
-              setActiveCategory('Всі'); // Скидаємо підкатегорію при зміні головної!
+              setActiveCategory('Всі'); 
             }}
             style={{
               padding: '10px 20px',
@@ -612,11 +676,11 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       maxWidth: '600px',
       padding: '12px 20px',
       fontSize: '16px',
-      backgroundColor: '#1a1a1a', /* Темний фон */
-      color: '#ffffff',           /* Білий текст */
-      border: '1px solid #444',   /* Темна рамка */
-      borderRadius: '25px',       /* Гарні закруглені кути */
-      outline: 'none'             /* Прибираємо біле обведення при кліку */
+      backgroundColor: '#1a1a1a', 
+      color: '#ffffff',        
+      border: '1px solid #444',  
+      borderRadius: '25px',      
+      outline: 'none'             
     }}
   />
 </div>
@@ -693,7 +757,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-      {/* МОДАЛКА: АВТОРИЗАЦІЯ */}
+      {/* МОДЕАЛЬКА: АВТОРИЗАЦІЯ */}
       {isAuthModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAuthModalOpen(false)} style={{ zIndex: 10000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px', width: '90%', padding: '25px' }}>
@@ -721,7 +785,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-      {/* МОДАЛКА: ДОДАТИ ТОВАР */}
+      {/* МОДЕАЛЬКА: ДОДАТИ ТОВАР */}
       {isAddProductModalOpen && (
         <div className="modal-overlay" onClick={() => setIsAddProductModalOpen(false)} style={{ zIndex: 10000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%', padding: '25px' }}>
@@ -794,7 +858,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
       )}
 
 
-      {/* МОДАЛКА: ПЕРЕГЛЯД ЗАМОВЛЕНЬ (АДМІН) */}
+      {/* МОДЕАЛЬКА: ПЕРЕГЛЯД ЗАМОВЛЕНЬ (АДМІН) */}
       {isOrdersModalOpen && (
         <div className="modal-overlay" onClick={() => setIsOrdersModalOpen(false)} style={{ zIndex: 10000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', width: '95%', maxHeight: '85vh', overflowY: 'auto', padding: '25px' }}>
@@ -842,7 +906,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-      {/* МОДАЛКА: КОРИСТУВАЧІ (АДМІН) */}
+      {/* МОДЕАЛЬКА: КОРИСТУВАЧІ (АДМІН) */}
       {isUsersModalOpen && (
         <div className="modal-overlay" onClick={() => setIsUsersModalOpen(false)} style={{ zIndex: 10000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', width: '95%', maxHeight: '85vh', overflowY: 'auto', padding: '25px' }}>
@@ -929,7 +993,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-{/* МОДАЛКА: РЕДАГУВАННЯ ТОВАРУ */}
+{/* МОДЕАЛЬКА: РЕДАГУВАННЯ ТОВАРУ */}
       {isEditProductModalOpen && (
         <div className="modal-overlay" onClick={() => setIsEditProductModalOpen(false)} style={{ zIndex: 10000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '95%', padding: '25px' }}>
@@ -959,7 +1023,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                 />
               </div>
 
-              {/* ОСЬ ТУТ ТЕПЕР НОВІ ВИПАДАЮЧІ СПИСКИ КАТЕГОРІЙ */}
+          
               <div style={{ display: 'flex', gap: '15px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: '12px', color: '#888', marginBottom: '5px', display: 'block' }}>Головний розділ</label>
@@ -1038,7 +1102,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-      {/* МОДАЛКА: ПРОФІЛЬ ТА ІСТОРІЯ ЗАМОВЛЕНЬ */}
+      {/* МОДЕАЛЬКА: ПРОФІЛЬ ТА ІСТОРІЯ ЗАМОВЛЕНЬ */}
       {isProfileModalOpen && (
         <div className="modal-overlay" onClick={() => setIsProfileModalOpen(false)} style={{ zIndex: 10000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '850px', width: '95%', maxHeight: '90vh', overflowY: 'auto', padding: '30px' }}>
@@ -1053,7 +1117,38 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                   <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: '#222', margin: '0 auto 15px', overflow: 'hidden', border: '3px solid #ff4d4d', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     {editAvatar ? <img src={editAvatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Avatar" /> : <div style={{ fontSize: '50px' }}>👤</div>}
                   </div>
-                  <p style={{ color: '#888', fontSize: '14px' }}>{user.email}</p>
+                 {user?.emailVerified ? (
+  <div style={{ color: '#4caf50', fontSize: '14px', fontWeight: '600', marginBottom: '20px', letterSpacing: '0.5px' }}>
+    ✓ Пошта підтверджена
+  </div>
+) : (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+    {/* Акуратна плашка */}
+    <div style={{ display: 'inline-block', background: 'rgba(255, 77, 77, 0.08)', border: '1px solid rgba(255, 77, 77, 0.3)', color: '#ff4d4d', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: '500', letterSpacing: '0.5px' }}>
+      Пошта не підтверджена
+    </div>
+    
+    {/* Кнопка-посилання (мінімалістична) */}
+    <button 
+      onClick={handleResendVerification}
+      style={{ 
+        background: 'transparent', 
+        color: '#888', 
+        border: 'none', 
+        borderBottom: '1px solid rgba(136, 136, 136, 0.4)', 
+        padding: '2px 0', 
+        fontSize: '11px', 
+        cursor: 'pointer', 
+        transition: 'all 0.2s ease',
+        marginTop: '2px'
+      }}
+      onMouseOver={(e) => { e.target.style.color = '#fff'; e.target.style.borderBottom = '1px solid #fff'; }}
+      onMouseOut={(e) => { e.target.style.color = '#888'; e.target.style.borderBottom = '1px solid rgba(136, 136, 136, 0.4)'; }}
+    >
+      Надіслати лінк ще раз
+    </button>
+  </div>
+)}
                 </div>
                 
                 <form onSubmit={handleUpdateProfile} className="order-form">
@@ -1074,7 +1169,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                 <button 
                   onClick={() => {
                     handleLogout();
-                    setIsProfileModalOpen(false); // Одразу закриваємо вікно профілю
+                    setIsProfileModalOpen(false); 
                   }} 
                   className="cta-secondary" 
                   style={{ 
@@ -1093,7 +1188,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                 >
                   Вийти з акаунта
                 </button>
-                {/* --- КІНЕЦЬ НОВОЇ КНОПКИ --- */}
+          
               </div>
 
               <div style={{ flex: '2 1 400px', display: 'flex', flexDirection: 'column' }}>
@@ -1158,7 +1253,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-      {/* МОДАЛКА: ДЕТАЛІ ТОВАРУ ТА ВІДГУКИ */}
+      {/* МОДЕЛЬКА: ДЕТАЛІ ТОВАРУ ТА ВІДГУКИ */}
       {selectedProduct && (
         <div className="modal-overlay" onClick={closeProductDetails} style={{ zIndex: 9000 }}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '900px', width: '90%', display: 'flex', flexWrap: 'wrap', gap: '30px', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -1256,7 +1351,6 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       </section>
 
-      {/* МОДАЛКА: КОШИК */}
       {isCartOpen && (
         <div className="modal-overlay" onClick={() => setIsCartOpen(false)}>
           <div className="cart-sidebar" onClick={(e) => e.stopPropagation()}>
@@ -1270,10 +1364,10 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
                     <span>{item.price} грн x {item.quantity || 1}</span>
                   </div>
                   <button className="delete-item" onClick={() => removeFromCart(item.id)}>🗑️</button>
-                  {/* БЛОК КЕРУВАННЯ КІЛЬКІСТЮ ТА ВИДАЛЕННЯ */}
+                  
 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
   
-  {/* Кнопки + та - */}
+
   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
     <button 
       onClick={() => handleUpdateQuantity(item.id, -1)}
@@ -1292,7 +1386,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
     </button>
   </div>
 
-  {/* Кнопка видалення */}
+
   <button 
     onClick={() => removeFromCart(item.id)} 
     style={{ background: 'transparent', border: 'none', color: '#ff4d4d', fontSize: '18px', cursor: 'pointer', padding: '0' }}
@@ -1316,7 +1410,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
         </div>
       )}
 
-      {/* МОДАЛКА: ФОРМА ЗАМОВЛЕННЯ */}
+ 
       {isOrderFormOpen && (
         <div className="modal-overlay" onClick={() => setIsOrderFormOpen(false)}>
           <div className="order-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }}>
@@ -1392,7 +1486,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
           <p>&copy; {new Date().getFullYear()} VIGOR. Всі права захищені. 🦾</p>
         </div>
       </footer>
-      {/* ПЛАШКА СПОВІЩЕННЯ (TOAST) З АНІМАЦІЄЮ */}
+
       {toastMessage && (
         <>
           <style>
@@ -1418,7 +1512,7 @@ const totalPrice = cartItems.reduce((sum, item) => sum + (item.price * (item.qua
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            animation: 'slideUpFade 0.4s ease-out forwards' /* <--- Ось тут додано анімацію */
+            animation: 'slideUpFade 0.4s ease-out forwards' 
           }}>
             {toastMessage}
           </div>
